@@ -1,6 +1,12 @@
-from customtkinter import *
+
 import json, subprocess, time
 import threading
+
+try:
+    from customtkinter import *
+except ModuleNotFoundError:
+    subprocess.call('pip install customtkinter', shell=True)
+from customtkinter import *
 
 PermError = "vui long kiem tra quyen truy cap"
 
@@ -162,7 +168,7 @@ class UI:
 
         self.root.mainloop()
 
-    def BlockedWindow(self, reason = 'unknow'):
+    def BlockedWindow(self, reason = UnknowError):
         self.DestroyAllWidget()
 
         self.root.AnouFrame = CTkFrame(self.root, fg_color='transparent', width=self.width, height=self.height)
@@ -205,7 +211,43 @@ class UI:
 
 
 
+
+
+
+
+
+
+
+
+
+
 UI()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
