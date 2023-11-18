@@ -2,12 +2,6 @@
 import json, subprocess, time
 import threading
 
-try:
-    from customtkinter import *
-except ModuleNotFoundError:
-    subprocess.call('pip install customtkinter', shell=True)
-from customtkinter import *
-
 PermError = "vui long kiem tra quyen truy cap"
 
 UserDataFileName = "AESN.json"
