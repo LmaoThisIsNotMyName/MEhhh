@@ -1,0 +1,234 @@
+
+import json, subprocess, time
+import threading
+
+try:
+    from customtkinter import *
+except ModuleNotFoundError:
+    subprocess.call('pip install customtkinter', shell=True)
+from customtkinter import *
+
+PermError = "vui long kiem tra quyen truy cap"
+
+UserDataFileName = "AESN.json"
+
+SpamInvalidKey = f"do not spam too much invalid key, rerun program"
+InvalidSavedKey = f"your saved key is invalid, delete file or change it in {UserDataFileName}"
+UnknowError = f"unknow error has occured, please contact to admin"
+
+
+def MyIp():
+    try: import requests
+    except ModuleNotFoundError:
+        subprocess.call(f"pip install requests", shell=True)
+    import requests
+    return requests.get("https://api.ipify.org/").text
+
+def FileExist(path):
+    try:
+        open(path, "r")
+    except FileNotFoundError:
+        return False
+    except PermissionError:
+        raise PermissionError(PermError)
+    return True
+
+def CreateJsonFile(path, data = None):
+    try:
+        with open(path, "w") as f:
+            json.dump(data, f)
+    except PermissionError:
+        raise PermissionError(PermError)
+    return True
+
+
+#font header: CTkFont("Century Gothic", 60, "normal", "roman", True, False)
+class UI:
+    def InitWindow(self, name = "Mumpus The Rucoy", background_color = "dark", theme = "dark-blue", width=850, height=400):
+        try: self.root.destroy()
+        except: pass
+
+        set_appearance_mode(background_color)
+        set_default_color_theme(theme)
+
+        self.root = CTk()
+        
+        x = (self.root.winfo_screenwidth()/2) - (width/2)
+        y = (self.root.winfo_screenheight()/2) - (height/2)
+        self.root.geometry('%dx%d+%d+%d' % (width, height, x, y))
+        self.root.maxsize(width, height)
+        self.root.minsize(width, height)
+        self.width = width
+        self.height = height
+
+        self.HoverColor = "#202020"
+        self.BackgroundColor = "#1B1B1B"
+
+        self.root.title(name)
+
+    def __init__(self):
+        if FileExist(UserDataFileName):
+            UserData = json.load(open(UserDataFileName, "r"))
+
+            if UserData['AutoSignIn']:
+                if self.AuthKey(key=str(UserData['Key'])):
+                    self.InitWindow()
+                    self.MainWindow()
+                    self.root.mainloop()
+                    return
+            
+                else:
+                    self.InitWindow()
+                    self.BlockedWindow(reason=InvalidSavedKey)
+                    self.root.mainloop()
+            else:
+                self.InitWindow()
+                self.LoginWindow()
+                self.root.mainloop()
+
+        else:
+            self.InitWindow()
+            self.LoginWindow()
+            self.root.mainloop()
+
+
+    def AllWidget(self, master):
+        return master.winfo_children()
+
+    def DestroyAllWidget(self, master=None):
+        if master == None:
+            for i in self.AllWidget(master=self.root):
+                i.destroy()
+        else:
+            for i in self.AllWidget(master=master):
+                i.destroy()
+
+    def RefreshInvalidKeyLabel(self):
+        self.root.SubmitTimes += 1
+        time.sleep(1)
+        self.root.KeyStatusLabel.destroy()
+
+
+    def AuthKey(self, key = None):
+
+        try: self.root.KeyStatusLabel.destroy()
+        except: pass
+
+        if key == None:
+            if self.root.SubmitTimes >= 6:
+                self.BlockedWindow(reason = SpamInvalidKey)
+                return False
+            else:
+                if self.root.KeyEntry.get() != "tanh":
+                    if self.root.SubmitTimes > 4:
+                        self.root.KeyStatusLabel = CTkLabel(self.root, text = f"Last time", text_color="red")
+                    else:
+                        self.root.KeyStatusLabel = CTkLabel(self.root, text = f"Invalid key", text_color="red")
+                    self.root.KeyStatusLabel.place(relx = 0.5, rely = 0.9, anchor=CENTER)
+                    threading.Thread(target=self.RefreshInvalidKeyLabel).start()
+                    return False
+                else:
+                    if self.root.RememberCheckBox.get() == True:
+                        UserData = {
+                            "AutoSignIn": True,
+                            "Key": self.root.KeyEntry.get()
+                        }
+                        CreateJsonFile(UserDataFileName, UserData)
+
+                    self.root.SubmitTimes = 0
+                    self.MainWindow()
+        else:
+            if key != "tanh":
+                return False
+            else:
+                return True
+
+    def LoginWindow(self):
+        self.InitWindow()
+        self.root.SubmitTimes = 1
+        
+        self.root.WelcomeLabel = CTkLabel(self.root, text="Welcome User", fg_color="transparent", font=CTkFont("Century Gothic", 60, "normal", "roman", False, False))
+        self.root.WelcomeLabel.place(relx=0.5, rely = 0.4, anchor=CENTER)
+        self.root.UnderlineLabel = CTkLabel(self.root, text="_____________________", fg_color="transparent", font=("Century Gothic", 60))
+        self.root.UnderlineLabel.place(relx=0.5, rely = 0.765, anchor=CENTER)
+
+        #login form
+        self.root.LoginForm = CTkFrame(self.root, fg_color="transparent", width=350, height=80)
+        self.root.LoginForm.place(relx=0.577, rely=0.715, anchor=CENTER)
+
+        self.root.KeyEntry = CTkEntry(self.root.LoginForm, placeholder_text="Paste your key here")
+        self.root.KeyEntry.place(relx=0.3, rely=0.3, anchor=CENTER)
+
+        self.root.SignButton = CTkButton(self.root.LoginForm, text = "Submit", command=self.AuthKey)
+        self.root.SignButton.place(relx=0.3, rely=0.72, anchor=CENTER)
+
+        self.root.RememberCheckBox = CTkCheckBox(self.root.LoginForm, text="Remember", onvalue=True, offvalue=False)
+        self.root.RememberCheckBox.place(relx=0.67, rely=0.72, anchor=CENTER)
+        #end login form
+
+        self.root.mainloop()
+
+    def BlockedWindow(self, reason = UnknowError):
+        self.DestroyAllWidget()
+
+        self.root.AnouFrame = CTkFrame(self.root, fg_color='transparent', width=self.width, height=self.height)
+        self.root.AnouFrame.place(relx=0.5, rely=0.5, anchor=CENTER)
+
+        self.root.BlockedLabel = CTkLabel(self.root.AnouFrame, text="You Have Been Blocked :(", font=("Century Gothic", 60))
+        self.root.BlockedLabel.place(relx=0.5, rely=0.43, anchor=CENTER)
+
+        self.root.DontWorryLabel = CTkLabel(self.root.AnouFrame,text=f"Reason: {reason}", font=("Century Gothic", 20))
+        self.root.DontWorryLabel.place(relx=0.5, rely=0.57, anchor=CENTER)
+    
+    def AccountIsLegit(self):
+        print("\n")
+        try:
+            gmail = self.root.GmailEntry.get()
+            password = self.root.PasswordEntry.get()
+        except Exception:
+            print(False)
+        if "@gmail" not in gmail:
+            print("Invalid Gmail Form")
+        if len(password) < 8:
+            print("Invalid Password Form")
+
+    def MainWindow(self):
+        self.DestroyAllWidget()
+        
+        self.root.Frame = CTkFrame(self.root, fg_color=self.BackgroundColor, width=self.width, height=self.height)
+        self.root.Frame.pack()
+
+        self.root.OptionFrame = CTkFrame(self.root.Frame, fg_color= "#313131", corner_radius=0, width=self.width/3, height=self.height)
+        self.root.OptionFrame.place(relx=0.834, rely=0.5,anchor = CENTER)
+
+        self.root.GmailEntry = CTkEntry(self.root.OptionFrame, placeholder_text="Gmail", corner_radius=0, width=170)
+        self.root.GmailEntry.place(relx=0.5, rely=0.64, anchor=CENTER)
+
+        self.root.PasswordEntry = CTkEntry(self.root.OptionFrame, placeholder_text="Password", corner_radius=0, width=170)
+        self.root.PasswordEntry.place(relx=0.5, rely=0.72, anchor=CENTER)
+
+        self.root.RunButton = CTkButton(self.root.OptionFrame, text = "Start", fg_color="#1B1B1B", text_color="#ffffff", command=self.AccountIsLegit, hover_color=self.HoverColor, width=170).place(relx=0.5,rely=0.82, anchor=CENTER)
+
+
+
+UI()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
