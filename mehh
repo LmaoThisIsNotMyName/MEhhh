@@ -162,7 +162,7 @@ class UI:
 
         self.root.mainloop()
 
-    def BlockedWindow(self, reason = UnknowError):
+    def BlockedWindow(self, reason = 'unknow'):
         self.DestroyAllWidget()
 
         self.root.AnouFrame = CTkFrame(self.root, fg_color='transparent', width=self.width, height=self.height)
